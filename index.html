@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<!-- Created with https://packager.turbowarp.org/ -->
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- We only include this to explicitly loosen the CSP of various packager environments. It does not provide any security. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: blob:">
+  <title>BloonFight!</title>
+  <style>
+    body {
+      color: #ff0000;
+      font-family: sans-serif;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+    :root, body.is-fullscreen {
+      background-color: #000000;
+    }
+    [hidden] {
+      display: none !important;
+    }
+    h1 {
+      font-weight: normal;
+    }
+    a {
+      color: inherit;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    #app, #loading, #error, #launch {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      cursor: default;
+      user-select: none;
+      -webkit-user-select: none;
+      background-color: #000000;
+    }
+    #launch {
+      background-color: rgba(0, 0, 0, 0.7);
+      cursor: pointer;
+    }
+    .green-flag {
+      width: 80px;
+      height: 80px;
+      padding: 16px;
+      border-radius: 100%;
+      background: rgba(255, 255, 255, 0.75);
+      border: 3px solid hsla(0, 100%, 100%, 1);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-sizing: border-box;
+    }
+    #loading {
+      
+    }
+    .progress-bar-outer {
+      border: 1px solid currentColor;
+      height: 10px;
+      width: 200px;
+      max-width: 200px;
+    }
+    .progress-bar-inner {
+      height: 100%;
+      width: 0;
+      background-color: currentColor;
+    }
+    .loading-text, noscript {
+      font-weight: normal;
+      font-size: 36px;
+      margin: 0 0 16px;
+    }
+    .loading-image {
+      margin: 0 0 16px;
+    }
+    #error-message, #error-stack {
+      font-family: monospace;
+      max-width: 600px;
+      white-space: pre-wrap;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    #error-stack {
+      text-align: left;
+      max-height: 200px;
+      overflow: auto;
+    }
+    .control-button {
+      width: 2rem;
+      height: 2rem;
+      padding: 0.375rem;
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: pointer;
+      border: 0;
+      border-radius: 4px;
+    }
+    .control-button-highlight:hover {
+      background: #00fffb26;
+    }
+    .control-button-highlight.active {
+      background: #00fffb59;
+    }
+    .fullscreen-button {
+      background: white;
+    }
+    .standalone-fullscreen-button {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      border-radius: 0 0 0 4px;
+      padding: 4px;
+      cursor: pointer;
+    }
+    .sc-canvas {
+      cursor: url(data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHdpZHRoPSIxOS4zMDAzNCIgaGVpZ2h0PSIxOS4zMDAzNCIgdmlld0JveD0iMCwwLDE5LjMwMDM0LDE5LjMwMDM0Ij48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMjMwLjM0OTgzLC0xNzAuMzQ5ODMpIj48ZyBkYXRhLXBhcGVyLWRhdGE9InsmcXVvdDtpc1BhaW50aW5nTGF5ZXImcXVvdDs6dHJ1ZX0iIGZpbGw9IiM4MDgwODAiIGZpbGwtcnVsZT0ibm9uemVybyIgc3Ryb2tlPSIjNDA0MDQwIiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiIHN0cm9rZS1taXRlcmxpbWl0PSIxMCIgc3Ryb2tlLWRhc2hhcnJheT0iIiBzdHJva2UtZGFzaG9mZnNldD0iMCIgc3R5bGU9Im1peC1ibGVuZC1tb2RlOiBub3JtYWwiPjxwYXRoIGQ9Ik0yMzEuNTk5ODMsMTgwYzAsLTQuNjM5MjggMy43NjA4OSwtOC40MDAxNyA4LjQwMDE3LC04LjQwMDE3YzQuNjM5MjgsMCA4LjQwMDE3LDMuNzYwODkgOC40MDAxNyw4LjQwMDE3YzAsNC42MzkyOCAtMy43NjA4OSw4LjQwMDE3IC04LjQwMDE3LDguNDAwMTdjLTQuNjM5MjgsMCAtOC40MDAxNywtMy43NjA4OSAtOC40MDAxNywtOC40MDAxN3oiLz48L2c+PC9nPjwvc3ZnPg==) 0 0, auto;
+    }
+    .sc-monitor-root[data-opcode^="data_"] .sc-monitor-value-color {
+      background-color: #000000;
+    }
+    .sc-monitor-row-value-outer {
+      background-color: #000000;
+    }
+    .sc-monitor-row-value-editing .sc-monitor-row-value-outer {
+      background-color: #000000;
+    }
+    
+  </style>
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCwwLDQwLDQwIj48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMjIwLC0xNjApIj48ZyBmaWxsPSIjZmYwMDAwIiBzdHJva2U9IiM4MDAwMDAiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLW1pdGVybGltaXQ9IjEwIj48cGF0aCBkPSJNMjIyLjUsMTgwYzAsLTkuNjY0OTggNy44MzUwMiwtMTcuNSAxNy41LC0xNy41YzkuNjY0OTgsMCAxNy41LDcuODM1MDIgMTcuNSwxNy41YzAsOS42NjQ5OCAtNy44MzUwMiwxNy41IC0xNy41LDE3LjVjLTkuNjY0OTgsMCAtMTcuNSwtNy44MzUwMiAtMTcuNSwtMTcuNXoiLz48L2c+PC9nPjwvc3ZnPg==">
+</head>
+<body>
+  <div id="app"></div>
+
+  <div id="launch" class="screen" hidden title="Click to start">
+    <div class="green-flag">
+      <svg viewBox="0 0 16.63 17.5" width="42" height="44">
+        <defs><style>.cls-1,.cls-2{fill:#4cbf56;stroke:#45993d;stroke-linecap:round;stroke-linejoin:round;}.cls-2{stroke-width:1.5px;}</style></defs>
+        <path class="cls-1" d="M.75,2A6.44,6.44,0,0,1,8.44,2h0a6.44,6.44,0,0,0,7.69,0V12.4a6.44,6.44,0,0,1-7.69,0h0a6.44,6.44,0,0,0-7.69,0"/>
+        <line class="cls-2" x1="0.75" y1="16.75" x2="0.75" y2="0.75"/>
+      </svg>
+    </div>
+  </div>
+
+  <div id="loading" class="screen">
+    <noscript>Enable JavaScript</noscript>
+    <h1 class="loading-text">Pop Em!</h1>
+    <div class="loading-image"><img src="data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHdpZHRoPSI1NDIuMDQyMDQiIGhlaWdodD0iNDAyLjQwMjQiIHZpZXdCb3g9IjAsMCw1NDIuMDQyMDQsNDAyLjQwMjQiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDMxLjAyMTAyLDIxLjIwMTIpIj48ZyBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiPjxwYXRoIGQ9Ik0tMzEuMDIxMDIsMzgxLjIwMTJ2LTQwMi40MDI0aDU0Mi4wNDIwNHY0MDIuNDAyNHoiIGZpbGw9IiMwMDAwMDAiIHN0cm9rZT0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIwIi8+PHBhdGggZD0iTTE3Ni42NDEzNCwxODguNDI5MDJjMCwyMC40NjEwNiAtMTYuNTg2OTcsMzcuMDQ4MDMgLTM3LjA0ODAzLDM3LjA0ODAzYy0yMC40NjEwNiwwIC0zNy4wNDgwMywtMTYuNTg2OTcgLTM3LjA0ODAzLC0zNy4wNDgwM2MwLC0yMC40NjEwNiAxNi41ODY5NywtMzcuMDQ4MDMgMzcuMDQ4MDMsLTM3LjA0ODAzYzIwLjQ2MTA2LDAgMzcuMDQ4MDMsMTYuNTg2OTcgMzcuMDQ4MDMsMzcuMDQ4MDN6IiBmaWxsPSIjMDBmM2ZmIiBzdHJva2U9IiMwMDc5ODAiIHN0cm9rZS13aWR0aD0iNSIvPjxwYXRoIGQ9Ik0xNjkuMjI5NzIsMjQ5Ljk5MDU5YzAsMTIuMjIxNDYgLTkuOTA3NDYsMjIuMTI4OTIgLTIyLjEyODkyLDIyLjEyODkyYy0xMi4yMjE0NiwwIC0yMi4xMjg5MiwtOS45MDc0NiAtMjIuMTI4OTIsLTIyLjEyODkyYzAsLTEyLjIyMTQ2IDkuOTA3NDYsLTIyLjEyODkyIDIyLjEyODkyLC0yMi4xMjg5MmMxMi4yMjE0NiwwIDIyLjEyODkyLDkuOTA3NDYgMjIuMTI4OTIsMjIuMTI4OTJ6IiBmaWxsPSIjZmZjNTAwIiBzdHJva2U9IiM4MDczMDAiIHN0cm9rZS13aWR0aD0iNSIvPjxwYXRoIGQ9Ik0yMTUuNTU1OTUsMjA5LjQ1MDA0YzAsMTcuOTA0NTggLTE0LjUxNDUzLDMyLjQxOTEyIC0zMi40MTkxMiwzMi40MTkxMmMtMTcuOTA0NTgsMCAtMzIuNDE5MTIsLTE0LjUxNDUzIC0zMi40MTkxMiwtMzIuNDE5MTJjMCwtMTcuOTA0NTggMTQuNTE0NTMsLTMyLjQxOTEyIDMyLjQxOTEyLC0zMi40MTkxMmMxNy45MDQ1OCwwIDMyLjQxOTEyLDE0LjUxNDUzIDMyLjQxOTEyLDMyLjQxOTEyeiIgZmlsbD0iIzAwZmY3MiIgc3Ryb2tlPSIjMDA4MDMzIiBzdHJva2Utd2lkdGg9IjUiLz48cGF0aCBkPSJNMTQ5LjE4ODI4LDIyOC45Njk1NmMwLDI2LjAzMDU3IC0yMS4xMDE5Niw0Ny4xMzI1MyAtNDcuMTMyNTMsNDcuMTMyNTNjLTI2LjAzMDU3LDAgLTQ3LjEzMjUzLC0yMS4xMDE5NiAtNDcuMTMyNTMsLTQ3LjEzMjUzYzAsLTI2LjAzMDU3IDIxLjEwMTk2LC00Ny4xMzI1MyA0Ny4xMzI1MywtNDcuMTMyNTNjMjYuMDMwNTcsMCA0Ny4xMzI1MywyMS4xMDE5NiA0Ny4xMzI1Myw0Ny4xMzI1M3oiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZT0iIzgwODA4MCIgc3Ryb2tlLXdpZHRoPSI1Ii8+PHBhdGggZD0iTTIyLjc3MTc3LDIzNy4wNTcwNmMwLC0yMC40NjEwNiAxNi41ODY5NywtMzcuMDQ4MDMgMzcuMDQ4MDMsLTM3LjA0ODAzYzIwLjQ2MTA2LDAgMzcuMDQ4MDMsMTYuNTg2OTcgMzcuMDQ4MDMsMzcuMDQ4MDNjMCwyMC40NjEwNiAtMTYuNTg2OTcsMzcuMDQ4MDMgLTM3LjA0ODAzLDM3LjA0ODAzYy0yMC40NjEwNiwwIC0zNy4wNDgwMywtMTYuNTg2OTcgLTM3LjA0ODAzLC0zNy4wNDgwM3oiIGZpbGw9IiMwMGYzZmYiIHN0cm9rZT0iIzAwNzk4MCIgc3Ryb2tlLXdpZHRoPSI1Ii8+PHBhdGggZD0iTTc4LjIzMTQ0LDI0Ny41Njc1NmMwLC0xMi4yMjE0NiA5LjkwNzQ2LC0yMi4xMjg5MiAyMi4xMjg5MiwtMjIuMTI4OTJjMTIuMjIxNDYsMCAyMi4xMjg5Miw5LjkwNzQ2IDIyLjEyODkyLDIyLjEyODkyYzAsMTIuMjIxNDYgLTkuOTA3NDYsMjIuMTI4OTIgLTIyLjEyODkyLDIyLjEyODkyYy0xMi4yMjE0NiwwIC0yMi4xMjg5MiwtOS45MDc0NiAtMjIuMTI4OTIsLTIyLjEyODkyeiIgZmlsbD0iI2ZmYzUwMCIgc3Ryb2tlPSIjODA3MzAwIiBzdHJva2Utd2lkdGg9IjUiLz48cGF0aCBkPSJNNjkuNDQyNzQsMjgyLjEwMjFjMCwtMTcuOTA0NTggMTQuNTE0NTMsLTMyLjQxOTEyIDMyLjQxOTEyLC0zMi40MTkxMmMxNy45MDQ1OCwwIDMyLjQxOTEyLDE0LjUxNDUzIDMyLjQxOTEyLDMyLjQxOTEyYzAsMTcuOTA0NTggLTE0LjUxNDUzLDMyLjQxOTEyIC0zMi40MTkxMiwzMi40MTkxMmMtMTcuOTA0NTgsMCAtMzIuNDE5MTIsLTE0LjUxNDUzIC0zMi40MTkxMiwtMzIuNDE5MTJ6IiBmaWxsPSIjMDBmZjcyIiBzdHJva2U9IiMwMDgwMzMiIHN0cm9rZS13aWR0aD0iNSIvPjxwYXRoIGQ9Ik0yLjE3Njc4LDI3My4wOTMwOWMwLC0yNi4wMzA1NyAyMS4xMDE5NiwtNDcuMTMyNTMgNDcuMTMyNTMsLTQ3LjEzMjUzYzI2LjAzMDU3LDAgNDcuMTMyNTMsMjEuMTAxOTYgNDcuMTMyNTMsNDcuMTMyNTNjMCwyNi4wMzA1NyAtMjEuMTAxOTYsNDcuMTMyNTMgLTQ3LjEzMjUzLDQ3LjEzMjUzYy0yNi4wMzA1NywwIC00Ny4xMzI1MywtMjEuMTAxOTYgLTQ3LjEzMjUzLC00Ny4xMzI1M3oiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZT0iIzgwODA4MCIgc3Ryb2tlLXdpZHRoPSI1Ii8+PHBhdGggZD0iTTExMi4yODE4OSwyNjQuNTc5NThjMCwtMjYuMDMwNTcgMjEuMTAxOTYsLTQ3LjEzMjUzIDQ3LjEzMjUzLC00Ny4xMzI1M2MyNi4wMzA1NywwIDQ3LjEzMjUzLDIxLjEwMTk2IDQ3LjEzMjUzLDQ3LjEzMjUzYzAsMjYuMDMwNTcgLTIxLjEwMTk2LDQ3LjEzMjUzIC00Ny4xMzI1Myw0Ny4xMzI1M2MtMjYuMDMwNTcsMCAtNDcuMTMyNTMsLTIxLjEwMTk2IC00Ny4xMzI1MywtNDcuMTMyNTN6IiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9IiM4MDgwODAiIHN0cm9rZS13aWR0aD0iNSIvPjx0ZXh0IHRyYW5zZm9ybT0idHJhbnNsYXRlKDI1Ljc4MzA5LDY3LjQ2MDY4KSBzY2FsZSgxLjk1ODQ3LDEuOTU4NDcpIiBmb250LXNpemU9IjQwIiB4bWw6c3BhY2U9InByZXNlcnZlIiBmaWxsPSIjZmZmZmZmIiBzdHJva2U9Im5vbmUiIHN0cm9rZS13aWR0aD0iMSIgZm9udC1mYW1pbHk9IlNhbnMgU2VyaWYiIGZvbnQtd2VpZ2h0PSJub3JtYWwiIHRleHQtYW5jaG9yPSJzdGFydCI+PHRzcGFuIHg9IjAiIGR5PSIwIj5CbG9vbiBGaWdodDwvdHNwYW4+PC90ZXh0PjxwYXRoIGQ9Ik0zOTcuNDE1ODksMjIyLjY3MTMxaDk5LjU4MjY0djMxLjc3NDQ4aC05OS41ODI2NHoiIGZpbGw9IiNjYzAwYzIiIHN0cm9rZT0iIzRkMDA0OSIgc3Ryb2tlLXdpZHRoPSI1Ii8+PHBhdGggZD0iTTQzMS4zMTk5OSwyODguMzQ5ODl2LTk5LjU4MjY0aDMxLjc3NDQ4djk5LjU4MjY0eiIgZmlsbD0iI2NjMDBjMiIgc3Ryb2tlPSIjNGQwMDQ5IiBzdHJva2Utd2lkdGg9IjUiLz48cGF0aCBkPSJNNDEzLjkxMzI3LDIzOC41NTg1NmMwLC0xOC4zODc3MyAxNC45MDYxOSwtMzMuMjkzOTQgMzMuMjkzOTQsLTMzLjI5Mzk0YzE4LjM4NzczLDAgMzMuMjkzOTQsMTQuOTA2MTkgMzMuMjkzOTQsMzMuMjkzOTRjMCwxOC4zODc3MyAtMTQuOTA2MTksMzMuMjkzOTQgLTMzLjI5Mzk0LDMzLjI5Mzk0Yy0xOC4zODc3MywwIC0zMy4yOTM5NCwtMTQuOTA2MTkgLTMzLjI5Mzk0LC0zMy4yOTM5NHoiIGZpbGw9IiNjYzAwYzIiIHN0cm9rZT0iIzRkMDA0OSIgc3Ryb2tlLXdpZHRoPSI1Ii8+PHBhdGggZD0iTTQ0Ny45ODUzNiwyODEuODcwNjNsLTE2LjE5NzM0LDMxLjAyNDY2bC04My42NDg3MywtNDMuNjcxMjlsMTYuMTk3MzQsLTMxLjAyNDY2eiIgZmlsbD0iIzAwYjVmZiIgc3Ryb2tlPSIjMDA1YjgwIiBzdHJva2Utd2lkdGg9IjUiLz48cGF0aCBkPSJNNDQ3Ljc0MTAzLDMwMS40ODM1NGMtOS4yMjg2MywxNy42NzY2NyAtMzEuMDM5NjksMjQuNTI1MTQgLTQ4LjcxNjM0LDE1LjI5NjUyYy0xNy42NzY2NywtOS4yMjg2MyAtMjQuNTI1MTQsLTMxLjAzOTY4IC0xNS4yOTY1MywtNDguNzE2MzNjOS4yMjg2MywtMTcuNjc2NjcgMzEuMDM5NjksLTI0LjUyNTE1IDQ4LjcxNjMzLC0xNS4yOTY1M2MxNy42NzY2Nyw5LjIyODYzIDI0LjUyNTE1LDMxLjAzOTY5IDE1LjI5NjUzLDQ4LjcxNjM0eiIgZmlsbD0iIzAwYjVmZiIgc3Ryb2tlPSIjMDA1YjgwIiBzdHJva2Utd2lkdGg9IjUiLz48cGF0aCBkPSJNMzE2LjU5MjI0LDM2NS4yNzE3NGwtNjAuNjMxNDYsLTYwLjYzMTQ2bDYwLjYzMTQ2LC02MC42MzE0Nmw2MC42MzE0Niw2MC42MzE0NnoiIGZpbGw9IiM0ZTAwZmYiIHN0cm9rZT0iIzI2MDA4MCIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48cGF0aCBkPSJNMzA3LjU4MDgsMzE0LjM5MjIxbC0zNy43MzU2NywtMzcuNzM1NjdsMTkuMDc5ODQsLTE5LjA3OTg0bDM3LjczNTY3LDM3LjczNTY3eiIgZmlsbD0iIzNkMDBjYyIgc3Ryb2tlPSIjMTcwMDRkIiBzdHJva2Utd2lkdGg9IjIuNSIvPjxwYXRoIGQ9Ik0zMTYuNTkyMjQsMzQyLjM3NTk1bC0zNy43MzU2NywtMzcuNzM1NjdsMzcuNzM1NjcsLTM3LjczNTY3bDM3LjczNTY3LDM3LjczNTY3eiIgZmlsbD0iIzNkMDBjYyIgc3Ryb2tlPSIjMTcwMDRkIiBzdHJva2Utd2lkdGg9IjIuNSIvPjx0ZXh0IHRyYW5zZm9ybT0idHJhbnNsYXRlKDMxLjgwNTYsMzQ1LjYzNjgxKSBzY2FsZSgwLjY5MTU4LDAuNjkxNTgpIiBmb250LXNpemU9IjQwIiB4bWw6c3BhY2U9InByZXNlcnZlIiBmaWxsLW9wYWNpdHk9IjAuMjUwOTgiIGZpbGw9IiNmZmZmZmYiIHN0cm9rZT0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIxIiBmb250LWZhbWlseT0iU2FucyBTZXJpZiIgZm9udC13ZWlnaHQ9Im5vcm1hbCIgdGV4dC1hbmNob3I9InN0YXJ0Ij48dHNwYW4geD0iMCIgZHk9IjAiPihpbnNwaXJlZCBieSBCbG9vbiBNb25rZXkgQ2l0eSk8L3RzcGFuPjwvdGV4dD48cGF0aCBkPSJNNDYwLjQxODgsMTE0Ljc3MTc3bDQyLjQwMzc5LDQyLjQwMzc5bDUuMjk1NDksMjUuNjU2OTJsLTEwLjAwNzAyLDEwLjI2ODUybC0xMC44MDU1NSwxMC44MjkzNWwtMjYuODg2NywtNC4zNTEwMWwtNDIuNDAzNzksLTQyLjQwMzc5eiIgZmlsbD0iI2ZmYTQwMCIgc3Ryb2tlPSIjODA1MzAwIiBzdHJva2Utd2lkdGg9IjUiLz48L2c+PC9nPjwvc3ZnPg=="></div>
+    <div class="progress-bar-outer"><div class="progress-bar-inner" id="loading-inner"></div></div>
+  </div>
+
+  <div id="error" class="screen" hidden>
+    <h1>Error</h1>
+    <details>
+      <summary id="error-message"></summary>
+      <p id="error-stack"></p>
+    </details>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    const appElement = document.getElementById('app');
+    const launchScreen = document.getElementById('launch');
+    const loadingScreen = document.getElementById('loading');
+    const loadingInner = document.getElementById('loading-inner');
+    const errorScreen = document.getElementById('error');
+    const errorScreenMessage = document.getElementById('error-message');
+    const errorScreenStack = document.getElementById('error-stack');
+
+    const handleError = (error) => {
+      console.error(error);
+      if (!errorScreen.hidden) return;
+      errorScreen.hidden = false;
+      errorScreenMessage.textContent = '' + error;
+      let debug = error && error.stack || 'no stack';
+      debug += '\nUser agent: ' + navigator.userAgent;
+      errorScreenStack.textContent = debug;
+    };
+    const setProgress = (progress) => {
+      if (loadingInner) loadingInner.style.width = progress * 100 + '%';
+    };
+    const interpolate = (a, b, t) => a + t * (b - a);
+
+    try {
+      setProgress(0.1);
+
+      const scaffolding = new Scaffolding.Scaffolding();
+      scaffolding.width = 480;
+      scaffolding.height = 360;
+      scaffolding.resizeMode = "preserve-ratio";
+      scaffolding.editableLists = false;
+      scaffolding.usePackagedRuntime = true;
+      scaffolding.setup();
+      scaffolding.appendTo(appElement);
+
+      const vm = scaffolding.vm;
+      window.scaffolding = scaffolding;
+      window.vm = scaffolding.vm;
+      window.Scratch = {
+        vm,
+        renderer: vm.renderer,
+        audioEngine: vm.runtime.audioEngine,
+        bitmapAdapter: vm.runtime.v2BitmapAdapter,
+        videoProvider: vm.runtime.ioDevices.video.provider
+      };
+
+      scaffolding.setUsername("player####".replace(/#/g, () => Math.floor(Math.random() * 10)));
+      scaffolding.setAccentColor("#00fffb");
+
+      try {
+        scaffolding.addCloudProvider(new Scaffolding.Cloud.WebSocketProvider(["wss://clouddata.turbowarp.org","wss://clouddata.turbowarp.xyz"], "p4-@BloonFight!.sb3"));
+      } catch (error) {
+        console.error(error);
+      }
+
+      vm.setTurboMode(false);
+      if (vm.setInterpolation) vm.setInterpolation(true);
+      if (vm.setFramerate) vm.setFramerate(30);
+      if (vm.renderer.setUseHighQualityRender) vm.renderer.setUseHighQualityRender(true);
+      if (vm.setRuntimeOptions) vm.setRuntimeOptions({
+        fencing: true,
+        miscLimits: true,
+        maxClones: 9999999999,
+      });
+      if (vm.setCompilerOptions) vm.setCompilerOptions({
+        enabled: true,
+        warpTimer: false
+      });
+      if (vm.renderer.setMaxTextureDimension) vm.renderer.setMaxTextureDimension(2048);
+
+      // enforcePrivacy threat model only makes sense in the editor
+      if (vm.runtime.setEnforcePrivacy) vm.runtime.setEnforcePrivacy(false);
+
+      if (typeof ScaffoldingAddons !== 'undefined') {
+        ScaffoldingAddons.run(scaffolding, {"gamepad":false,"pointerlock":false,"specialCloudBehaviors":false,"unsafeCloudBehaviors":false,"pause":false});
+      }
+
+      scaffolding.setExtensionSecurityManager({
+        getSandboxMode: () => 'unsandboxed',
+        canLoadExtensionFromProject: () => true
+      });
+      for (const extension of []) {
+        vm.extensionManager.loadExtensionURL(extension);
+      }
+
+    } catch (e) {
+      handleError(e);
+    }
+  </script>
+  
+  
+    <script>
+      const getProjectData = (function() {
+        const storage = scaffolding.storage;
+        storage.onprogress = (total, loaded) => {
+          setProgress(interpolate(0.2, 0.98, loaded / total));
+        };
+        
+        storage.addWebStore(
+          [
+            storage.AssetType.ImageVector,
+            storage.AssetType.ImageBitmap,
+            storage.AssetType.Sound,
+            storage.AssetType.Font
+          ].filter(i => i),
+          (asset) => new URL('./assets/' + asset.assetId + '.' + asset.dataFormat, location).href
+        );
+        return () => new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.onload = () => {
+          resolve(xhr.response);
+        };
+        xhr.onerror = () => {
+          if (location.protocol === 'file:') {
+            reject(new Error('Zip environment must be used on a website, not on a local file. To fix this error, use the "Plain HTML" environment instead.'));
+          } else {
+            reject(new Error('Request to load project data failed.'));
+          }
+        };
+        xhr.onprogress = (e) => {
+          if (e.lengthComputable) {
+            setProgress(interpolate(0.1, 0.2, e.loaded / e.total));
+          }
+        };
+        xhr.responseType = 'arraybuffer';
+        xhr.open('GET', "./assets/project.json");
+        xhr.send();
+      });
+      })();
+    </script>
+  <script>
+    const run = async () => {
+      const projectData = await getProjectData();
+      await scaffolding.loadProject(projectData);
+      setProgress(1);
+      loadingScreen.hidden = true;
+      if (false) {
+        scaffolding.start();
+      } else {
+        launchScreen.hidden = false;
+        launchScreen.addEventListener('click', () => {
+          launchScreen.hidden = true;
+          scaffolding.start();
+        });
+        launchScreen.focus();
+      }
+    };
+    run().catch(handleError);
+  </script>
+</body>
+</html>
